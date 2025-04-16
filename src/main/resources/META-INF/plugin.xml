@@ -1,0 +1,43 @@
+<idea-plugin>
+    <id>org.longg.nh.entity-generator</id>
+    <name>Entity Generator</name>
+    <vendor email="longjava2024@gmail.com" url="">Entity Code Generator</vendor>
+
+    <description><![CDATA[
+    Entity Generator plugin to quickly generate related code components from entity classes.<br>
+    Features:
+    <ul>
+        <li>Generate DTOs with field selection</li>
+        <li>Generate Services</li>
+        <li>Generate Repositories</li>
+        <li>Generate Controllers</li>
+        <li>Support for various architectural patterns via configuration</li>
+        <li>Generate EntityParam for filtering with pagination</li>
+    </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="org.longg.nh.service.ConfigurationService"/>
+    </extensions>
+
+    <actions>
+        <action id="org.longg.nh.GenerateEntityCodeAction"
+                class="org.longg.nh.actions.GenerateEntityCodeAction"
+                text="Generate Entity Code"
+                description="Generate code components from entity class">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt G"/>
+        </action>
+        <action id="org.longg.nh.SimpleAction"
+                class="org.longg.nh.actions.SimpleAction"
+                text="Simple Entity Generator"
+                description="Simple action to test plugin compilation">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt S"/>
+        </action>
+    </actions>
+</idea-plugin> 

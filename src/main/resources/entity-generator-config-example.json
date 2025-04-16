@@ -1,0 +1,17 @@
+{
+  "name": "DDD",
+  "description": "Domain-Driven Design Architecture",
+  "dtoPackage": "application.dto",
+  "servicePackage": "application.service",
+  "repositoryPackage": "infrastructure.repository",
+  "controllerPackage": "interfaces.rest",
+  "filterPackage": "application.filter",
+  "useLombok": true,
+  "templates": {
+    "dtoTemplate": "DefaultDtoTemplate",
+    "serviceTemplate": "DefaultServiceTemplate",
+    "repositoryTemplate": "DefaultRepositoryTemplate",
+    "controllerTemplate": "DefaultControllerTemplate",
+    "filterTemplate": "DefaultFilterTemplate"
+  }
+}

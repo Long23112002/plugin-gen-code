@@ -1,0 +1,51 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '1.10.0'
+}
+
+group = 'org.longg.nh'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.projectlombok:lombok:1.18.28'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+// Configure Gradle IntelliJ Plugin
+intellij {
+    version = '2023.1.3'
+    type = 'IC' // IntelliJ IDEA Community Edition
+    plugins = ['com.intellij.java']
+}
+
+patchPluginXml {
+    changeNotes = """
+      <h3>1.0.0</h3>
+      <ul>
+        <li>Generate DTOs with field selection</li>
+        <li>Generate Services with CRUD operations</li>
+        <li>Generate Repositories with findBy methods</li>
+        <li>Generate Controllers with REST endpoints</li>
+        <li>Generate EntityParam for filtering with pagination</li>
+        <li>Support for various architectural patterns via configuration</li>
+      </ul>
+    """
+    sinceBuild = '231'
+    untilBuild = '241.*'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Set the Java compatibility level
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
