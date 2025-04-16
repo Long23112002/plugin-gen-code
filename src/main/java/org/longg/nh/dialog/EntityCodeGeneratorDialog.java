@@ -14,6 +14,7 @@ import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
+import com.intellij.icons.AllIcons;
 import org.jetbrains.annotations.Nullable;
 import org.longg.nh.model.ArchitectureConfig;
 import org.longg.nh.service.CodeGenerationService;
@@ -49,21 +50,74 @@ public class EntityCodeGeneratorDialog extends DialogWrapper {
         this.codeGenerationService = new CodeGenerationService(project, config, entityClass);
 
         setTitle("Generate Code from Entity: " + entityClass.getName());
+        setOKButtonText("Generate");
+        setCancelButtonText("Cancel");
         init();
     }
 
     @Nullable
     @Override
     protected JComponent createCenterPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setPreferredSize(new Dimension(600, 500));
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setPreferredSize(new Dimension(700, 600));
+        mainPanel.setBorder(JBUI.Borders.empty(10));
 
-        // Options panel
-        generateDtoCheckbox = new JBCheckBox("Generate DTO", true);
-        generateServiceCheckbox = new JBCheckBox("Generate Service", true);
-        generateRepositoryCheckbox = new JBCheckBox("Generate Repository", true);
-        generateControllerCheckbox = new JBCheckBox("Generate Controller", true);
-        generateFilterCheckbox = new JBCheckBox("Generate Filter", false);
+        // Create header panel
+        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        headerPanel.setBorder(JBUI.Borders.emptyBottom(10));
+        JLabel headerLabel = new JLabel("Select components to generate for " + entityClass.getName());
+        headerLabel.setFont(headerLabel.getFont().deriveFont(Font.BOLD, 14f));
+        headerPanel.add(headerLabel);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
+        // Create content panel with tabs
+        JTabbedPane tabbedPane = new JTabbedPane();
+        
+        // Components tab
+        JPanel componentsPanel = new JPanel(new BorderLayout());
+        componentsPanel.setBorder(JBUI.Borders.empty(10));
+        
+        // Create checkboxes with icons
+        generateDtoCheckbox = new JBCheckBox("DTO");
+        generateDtoCheckbox.setIcon(AllIcons.FileTypes.Java);
+        generateDtoCheckbox.setToolTipText("Generate Data Transfer Object");
+        generateDtoCheckbox.setSelected(true);
+        
+        generateServiceCheckbox = new JBCheckBox("Service");
+        generateServiceCheckbox.setIcon(AllIcons.Nodes.Class);
+        generateServiceCheckbox.setToolTipText("Generate Service layer");
+        generateServiceCheckbox.setSelected(true);
+        
+        generateRepositoryCheckbox = new JBCheckBox("Repository");
+        generateRepositoryCheckbox.setIcon(AllIcons.Nodes.Interface);
+        generateRepositoryCheckbox.setToolTipText("Generate Repository interface");
+        generateRepositoryCheckbox.setSelected(true);
+        
+        generateControllerCheckbox = new JBCheckBox("Controller");
+        generateControllerCheckbox.setIcon(AllIcons.Nodes.Class);
+        generateControllerCheckbox.setToolTipText("Generate REST Controller");
+        generateControllerCheckbox.setSelected(true);
+        
+        generateFilterCheckbox = new JBCheckBox("Filter");
+        generateFilterCheckbox.setIcon(AllIcons.Nodes.Class);
+        generateFilterCheckbox.setToolTipText("Generate Filter parameters");
+        generateFilterCheckbox.setSelected(false);
+
+        // Add checkboxes to a panel
+        JPanel checkboxesPanel = new JPanel(new GridLayout(5, 1, 0, 10));
+        checkboxesPanel.setBorder(JBUI.Borders.empty(10));
+        checkboxesPanel.add(generateDtoCheckbox);
+        checkboxesPanel.add(generateServiceCheckbox);
+        checkboxesPanel.add(generateRepositoryCheckbox);
+        checkboxesPanel.add(generateControllerCheckbox);
+        checkboxesPanel.add(generateFilterCheckbox);
+        
+        componentsPanel.add(checkboxesPanel, BorderLayout.WEST);
+        tabbedPane.addTab("Components", componentsPanel);
+
+        // Fields tab
+        JPanel fieldsPanel = new JPanel(new BorderLayout());
+        fieldsPanel.setBorder(JBUI.Borders.empty(10));
 
         // Create field list for DTO generation
         String[] fieldNames = entityFields.stream()
@@ -72,39 +126,64 @@ public class EntityCodeGeneratorDialog extends DialogWrapper {
 
         fieldsList = new JBList<>(fieldNames);
         fieldsList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        fieldsList.setVisibleRowCount(10);
-        fieldsList.setSelectionInterval(0, fieldNames.length - 1); // Select all by default
+        fieldsList.setVisibleRowCount(15);
+        fieldsList.setSelectionInterval(0, fieldNames.length - 1);
         JBScrollPane fieldsScrollPane = new JBScrollPane(fieldsList);
         fieldsScrollPane.setBorder(BorderFactory.createTitledBorder("Select fields for DTO"));
 
         // Create field list for Filter generation
         filterFieldsList = new JList<>(fieldNames);
         filterFieldsList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        filterFieldsList.setVisibleRowCount(10);
+        filterFieldsList.setVisibleRowCount(15);
         JBScrollPane filterFieldsScrollPane = new JBScrollPane(filterFieldsList);
         filterFieldsScrollPane.setBorder(BorderFactory.createTitledBorder("Select fields for Filter"));
 
         // Enable/disable filter fields based on checkbox
-        generateFilterCheckbox.addActionListener(e -> 
-            filterFieldsList.setEnabled(generateFilterCheckbox.isSelected())
-        );
+        generateFilterCheckbox.addActionListener(e -> {
+            filterFieldsList.setEnabled(generateFilterCheckbox.isSelected());
+            if (generateFilterCheckbox.isSelected()) {
+                filterFieldsList.setSelectionInterval(0, fieldNames.length - 1);
+            }
+        });
         filterFieldsList.setEnabled(false);
 
-        // Add components to form
-        JPanel optionsPanel = FormBuilder.createFormBuilder()
-            .addComponent(generateDtoCheckbox)
-            .addComponent(fieldsScrollPane)
-            .addComponent(generateServiceCheckbox)
-            .addComponent(generateRepositoryCheckbox)
-            .addComponent(generateControllerCheckbox)
-            .addComponent(generateFilterCheckbox)
-            .addComponent(filterFieldsScrollPane)
-            .getPanel();
+        // Add field lists to a panel
+        JPanel fieldListsPanel = new JPanel(new GridLayout(2, 1, 0, 10));
+        fieldListsPanel.add(fieldsScrollPane);
+        fieldListsPanel.add(filterFieldsScrollPane);
+        
+        fieldsPanel.add(fieldListsPanel, BorderLayout.CENTER);
+        tabbedPane.addTab("Fields", fieldsPanel);
 
-        optionsPanel.setBorder(JBUI.Borders.empty(10));
-        panel.add(optionsPanel, BorderLayout.CENTER);
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
-        return panel;
+        // Add validation
+        generateDtoCheckbox.addActionListener(e -> validateInput());
+        generateServiceCheckbox.addActionListener(e -> validateInput());
+        generateRepositoryCheckbox.addActionListener(e -> validateInput());
+        generateControllerCheckbox.addActionListener(e -> validateInput());
+        generateFilterCheckbox.addActionListener(e -> validateInput());
+
+        // Add footer with author name
+        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        footerPanel.setBorder(JBUI.Borders.emptyTop(10));
+        JLabel authorLabel = new JLabel("Nguyễn Hải Long");
+        authorLabel.setFont(authorLabel.getFont().deriveFont(Font.ITALIC, 10f));
+        authorLabel.setForeground(Color.GRAY);
+        footerPanel.add(authorLabel);
+        mainPanel.add(footerPanel, BorderLayout.SOUTH);
+
+        return mainPanel;
+    }
+
+    private void validateInput() {
+        boolean hasSelection = generateDtoCheckbox.isSelected() ||
+                             generateServiceCheckbox.isSelected() ||
+                             generateRepositoryCheckbox.isSelected() ||
+                             generateControllerCheckbox.isSelected() ||
+                             generateFilterCheckbox.isSelected();
+        
+        setOKActionEnabled(hasSelection);
     }
 
     @Override

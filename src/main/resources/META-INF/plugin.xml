@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>org.longg.nh.entity-generator</id>
     <name>Entity Generator</name>
-    <vendor email="longjava2024@gmail.com" url="">Entity Code Generator</vendor>
+    <vendor email="longjava2024@gmail.com" url="https://github.com/Long23112002/plugin-gen-code">Entity Code Generator</vendor>
 
     <description><![CDATA[
     Entity Generator plugin to quickly generate related code components from entity classes.<br>

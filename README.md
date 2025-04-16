@@ -60,7 +60,7 @@ Plugin cho IntelliJ IDEA giúp tạo nhanh các thành phần code liên quan đ
 
 ## Hỗ trợ
 
-Nếu bạn gặp vấn đề hoặc có ý tưởng cải tiến, vui lòng tạo issue tại [GitHub repository](https://github.com/yourusername/plugin-gen-code).
+Nếu bạn gặp vấn đề hoặc có ý tưởng cải tiến, vui lòng tạo issue tại [GitHub repository](https://github.com/Long23112002/plugin-gen-code).
 
 ## License
 
