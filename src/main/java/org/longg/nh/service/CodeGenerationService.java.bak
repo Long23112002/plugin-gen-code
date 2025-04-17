@@ -72,9 +72,9 @@ public class CodeGenerationService {
                 // Add validation annotations based on field type
                 if (config.isUseDtoValidation()) {
                     if (validationOptions != null && validationOptions.containsKey(field.getName())) {
-                        addValidationAnnotations(code, field, validationOptions);
+                        addValidationAnnotations(code, field);
                     } else {
-                        addValidationAnnotations(code, field, validationOptions);
+                        addValidationAnnotations(code, field);
                     }
                 }
                 
@@ -167,9 +167,9 @@ public class CodeGenerationService {
                 // Add validation annotations based on field type
                 if (config.isUseDtoValidation()) {
                     if (validationOptions != null && validationOptions.containsKey(field.getName())) {
-                        addValidationAnnotations(code, field, validationOptions);
+                        addCustomValidationAnnotations(field, validationOptions.get(field.getName()));
                     } else {
-                        addValidationAnnotations(code, field, validationOptions);
+                        addValidationAnnotations(code, field);
                     }
                 }
                 
@@ -211,133 +211,50 @@ public class CodeGenerationService {
         return dtoFile.getClasses()[0];
     }
     
-    private void addValidationAnnotations(StringBuilder code, ClassField field, Map<String, ValidationOption> validationOptions) {
+    private void addValidationAnnotations(StringBuilder code, ClassField field) {
         String fieldType = field.getType();
-        String fieldName = field.getName();
-        ValidationOption option = null;
         
-        // Check if we have custom validation options for this field
-        if (validationOptions != null && validationOptions.containsKey(fieldName)) {
-            option = validationOptions.get(fieldName);
-        }
-        
-        // Add @NotNull for all non-primitive fields except booleans if required
+        // Add @NotNull for all non-primitive fields except booleans
         if (!field.isPrimitive() && !fieldType.equals("Boolean")) {
-            boolean isRequired = option != null ? option.isRequired() : true;
-            if (isRequired) {
-                String message = option != null ? option.getMessageForValidation("required") : fieldName + " không được để trống";
-                code.append("    @NotNull(message = \"").append(message).append("\")\n");
-            }
+            code.append("    @NotNull(message = \"" + field.getName() + " không được để trống\")\n");
         }
         
         // Add field-specific validations
         if (fieldType.equals("String")) {
             // String validations
-            if (option != null && option.isNotBlank()) {
-                String message = option.getMessageForValidation("notBlank");
-                code.append("    @NotBlank(message = \"").append(message).append("\")\n");
-            }
+            code.append("    @NotBlank(message = \"" + field.getName() + " không được để trống\")\n");
             
-            if (option != null && option.isNotEmpty()) {
-                String message = option.getMessageForValidation("notEmpty");
-                code.append("    @NotEmpty(message = \"").append(message).append("\")\n");
-            }
-            
-            // Email validation
-            boolean isEmail = option != null ? option.isEmail() : fieldName.toLowerCase().contains("email");
-            if (isEmail) {
-                String message = option != null ? option.getMessageForValidation("email") : "Địa chỉ email không hợp lệ";
-                code.append("    @Email(message = \"").append(message).append("\")\n");
-            }
-            
-            // Size validation
-            if (option != null && option.isSize()) {
-                String message = option.getMessageForValidation("size");
-                code.append("    @Size(min = ").append(option.getMinSize())
-                    .append(", max = ").append(option.getMaxSize())
-                    .append(", message = \"").append(message).append("\")\n");
-            }
-            
-            // Pattern validation
-            if (option != null && option.isPattern() && option.getPatternValue() != null && !option.getPatternValue().isEmpty()) {
-                String message = option.getMessageForValidation("pattern");
-                code.append("    @Pattern(regexp = \"").append(option.getPatternValue())
-                    .append("\", message = \"").append(message).append("\")\n");
-            } else if (option == null) {
-                // Default patterns for common fields if no specific validation is provided
-                if (fieldName.toLowerCase().contains("phone") || fieldName.toLowerCase().contains("mobile") || 
-                        fieldName.toLowerCase().contains("telefone") || fieldName.toLowerCase().contains("celular")) {
-                    code.append("    @Pattern(regexp = \"^[0-9]{10,15}$\", message = \"Số điện thoại không hợp lệ\")\n");
-                }
+            // Check if field name suggests it's an email, phone, etc
+            String fieldName = field.getName().toLowerCase();
+            if (fieldName.contains("email")) {
+                code.append("    @Email(message = \"Địa chỉ email không hợp lệ\")\n");
+            } else if (fieldName.contains("phone") || fieldName.contains("mobile") || 
+                    fieldName.contains("telefone") || fieldName.contains("celular")) {
+                code.append("    @Pattern(regexp = \"^[0-9]{10,15}$\", message = \"Số điện thoại không hợp lệ\")\n");
             }
         } 
         else if (isNumericType(fieldType)) {
             // Numeric validations
-            if (option != null && option.isRange()) {
-                String message = option.getMessageForValidation("range");
-                if (fieldType.equals("int") || fieldType.equals("Integer") || 
-                    fieldType.equals("long") || fieldType.equals("Long")) {
-                    code.append("    @Min(value = ").append(option.getMin())
-                        .append(", message = \"").append(message).append("\")\n");
-                    code.append("    @Max(value = ").append(option.getMax())
-                        .append(", message = \"").append(message).append("\")\n");
-                } 
-                else if (fieldType.equals("double") || fieldType.equals("Double") ||
-                         fieldType.equals("float") || fieldType.equals("Float") ||
-                         fieldType.equals("BigDecimal")) {
-                    code.append("    @DecimalMin(value = \"").append(option.getMin())
-                        .append("\", message = \"").append(message).append("\")\n");
-                    code.append("    @DecimalMax(value = \"").append(option.getMax())
-                        .append("\", message = \"").append(message).append("\")\n");
-                }
-            } else if (option == null) {
-                // Default min validation for numeric types if no specific validation is provided
-                if (fieldType.equals("int") || fieldType.equals("Integer") || 
-                    fieldType.equals("long") || fieldType.equals("Long")) {
-                    code.append("    @Min(value = 0, message = \"" + fieldName + " phải lớn hơn hoặc bằng 0\")\n");
-                } 
-                else if (fieldType.equals("double") || fieldType.equals("Double") ||
-                         fieldType.equals("float") || fieldType.equals("Float") ||
-                         fieldType.equals("BigDecimal")) {
-                    code.append("    @DecimalMin(value = \"0.0\", message = \"" + fieldName + " phải lớn hơn hoặc bằng 0\")\n");
-                }
+            if (fieldType.equals("int") || fieldType.equals("Integer") || 
+                fieldType.equals("long") || fieldType.equals("Long")) {
+                code.append("    @Min(value = 0, message = \"" + field.getName() + " phải lớn hơn hoặc bằng 0\")\n");
+            } 
+            else if (fieldType.equals("double") || fieldType.equals("Double") ||
+                     fieldType.equals("float") || fieldType.equals("Float") ||
+                     fieldType.equals("BigDecimal")) {
+                code.append("    @DecimalMin(value = \"0.0\", message = \"" + field.getName() + " phải lớn hơn hoặc bằng 0\")\n");
             }
         }
         else if (fieldType.contains("Date") || fieldType.contains("LocalDate") || 
                  fieldType.contains("LocalDateTime")) {
             // Date validations
-            if (option != null) {
-                if (option.isPast()) {
-                    String message = option.getMessageForValidation("past");
-                    code.append("    @Past(message = \"").append(message).append("\")\n");
-                }
-                if (option.isFuture()) {
-                    String message = option.getMessageForValidation("future");
-                    code.append("    @Future(message = \"").append(message).append("\")\n");
-                }
-            } else {
-                // Default date validations if no specific validation is provided
-                if (fieldName.toLowerCase().contains("birth")) {
-                    code.append("    @Past(message = \"Ngày sinh phải là ngày trong quá khứ\")\n");
-                } else if (fieldName.toLowerCase().contains("expiry") || fieldName.toLowerCase().contains("expiration")) {
-                    code.append("    @Future(message = \"Ngày hết hạn phải là ngày trong tương lai\")\n");
-                }
-            }
-        }
-        else if (fieldType.contains("Collection") || fieldType.contains("List") || 
-                 fieldType.contains("Set") || fieldType.contains("Map") || 
-                 fieldType.contains("[]")) {
-            // Collection validations
-            if (option != null && option.isNotEmpty()) {
-                String message = option.getMessageForValidation("notEmpty");
-                code.append("    @NotEmpty(message = \"").append(message).append("\")\n");
-            }
-            
-            if (option != null && option.isSize()) {
-                String message = option.getMessageForValidation("size");
-                code.append("    @Size(min = ").append(option.getMinSize())
-                    .append(", max = ").append(option.getMaxSize())
-                    .append(", message = \"").append(message).append("\")\n");
+            if (field.getName().toLowerCase().contains("birth") || 
+                field.getName().toLowerCase().contains("nascimento")) {
+                code.append("    @Past(message = \"Ngày sinh phải là ngày trong quá khứ\")\n");
+            } else if (field.getName().toLowerCase().contains("expiry") || 
+                       field.getName().toLowerCase().contains("due") ||
+                       field.getName().toLowerCase().contains("vencimento")) {
+                code.append("    @Future(message = \"Ngày hết hạn phải là ngày trong tương lai\")\n");
             }
         }
     }
@@ -346,102 +263,89 @@ public class CodeGenerationService {
      * Add all custom validation annotations based on ValidationOption
      */
     private void addCustomValidationAnnotations(PsiField field, ValidationOption option) {
-        String fieldType = field.getType().getCanonicalText();
+        String fieldType = field.getType().getPresentableText();
+        String message = option.getMessage() != null && !option.getMessage().isEmpty() ?
+                option.getMessage() : null;
         
-        // Add @NotNull for required fields
+        // Validação de campo obrigatório
         if (option.isRequired()) {
-            addAnnotationToField(field, "NotNull", "message", 
-                    option.isCustomMessage() ? option.getMessage() : option.getRequiredMessage());
+            String requiredMessage = message != null ? message : "Trường này là bắt buộc";
+            addAnnotationToField(field, "NotNull", "message", requiredMessage);
         }
         
-        // Email validation
-        if (option.isEmail()) {
-            addAnnotationToField(field, "Email", "message", 
-                    option.isCustomMessage() ? option.getMessage() : option.getEmailMessage());
+        // Validação de email
+        if (option.isEmailValidation()) {
+            String emailMessage = message != null ? message : "Địa chỉ email không hợp lệ";
+            addAnnotationToField(field, "Email", "message", emailMessage);
         }
         
-        // Range validation for numeric fields
-        if (option.isRange() && isNumericType(fieldType)) {
-            String min = option.getMin();
-            String max = option.getMax();
-            String message = option.isCustomMessage() ? option.getMessage() : option.getRangeMessage();
+        // Validações para números
+        if (option.isNumberValidation()) {
+            Integer minValue = option.getMinValue();
+            Integer maxValue = option.getMaxValue();
             
-            if (fieldType.equals("int") || fieldType.equals("Integer") || 
-                fieldType.equals("long") || fieldType.equals("Long")) {
-                addAnnotationToField(field, "Min", "value", min, "message", message);
-                addAnnotationToField(field, "Max", "value", max, "message", message);
-            } 
-            else if (fieldType.equals("double") || fieldType.equals("Double") ||
-                     fieldType.equals("float") || fieldType.equals("Float") ||
-                     fieldType.equals("BigDecimal")) {
-                addAnnotationToField(field, "DecimalMin", "value", "\"" + min + "\"", "message", message);
-                addAnnotationToField(field, "DecimalMax", "value", "\"" + max + "\"", "message", message);
+            if (minValue != null) {
+                String minMessage = message != null ? message : "Giá trị tối thiểu: " + minValue;
+                addAnnotationToField(field, "Min", "value", minValue.toString(), "message", minMessage);
+            }
+            
+            if (maxValue != null) {
+                String maxMessage = message != null ? message : "Giá trị tối đa: " + maxValue;
+                addAnnotationToField(field, "Max", "value", maxValue.toString(), "message", maxMessage);
             }
         }
         
-        // String validations
-        if (fieldType.equals("String")) {
-            // NotBlank validation
+        // Validações para strings
+        if (option.isStringValidation()) {
             if (option.isNotBlank()) {
-                addAnnotationToField(field, "NotBlank", "message", 
-                        option.isCustomMessage() ? option.getMessage() : option.getNotBlankMessage());
+                String notBlankMessage = message != null ? message : "Trường này không được để trống";
+                addAnnotationToField(field, "NotBlank", "message", notBlankMessage);
             }
             
-            // NotEmpty validation
             if (option.isNotEmpty()) {
-                addAnnotationToField(field, "NotEmpty", "message", 
-                        option.isCustomMessage() ? option.getMessage() : option.getNotEmptyMessage());
+                String notEmptyMessage = message != null ? message : "Trường này không được để trống";
+                addAnnotationToField(field, "NotEmpty", "message", notEmptyMessage);
             }
             
-            // Size validation
             if (option.isSize()) {
-                addAnnotationToField(field, "Size", 
-                        "min", String.valueOf(option.getMinSize()), 
-                        "max", String.valueOf(option.getMaxSize()), 
-                        "message", option.isCustomMessage() ? option.getMessage() : option.getSizeMessage());
+                Integer minLength = option.getMinLength();
+                Integer maxLength = option.getMaxLength();
+                
+                if (minLength != null && maxLength != null) {
+                    String sizeMessage = message != null ? message : 
+                        "Độ dài phải từ " + minLength + " đến " + maxLength + " ký tự";
+                    addAnnotationToField(field, "Size", "min", minLength.toString(), 
+                                        "max", maxLength.toString(), "message", sizeMessage);
+                } else if (minLength != null) {
+                    String minSizeMessage = message != null ? message : 
+                        "Độ dài tối thiểu: " + minLength + " ký tự";
+                    addAnnotationToField(field, "Size", "min", minLength.toString(), "message", minSizeMessage);
+                } else if (maxLength != null) {
+                    String maxSizeMessage = message != null ? message : 
+                        "Độ dài tối đa: " + maxLength + " ký tự";
+                    addAnnotationToField(field, "Size", "max", maxLength.toString(), "message", maxSizeMessage);
+                }
             }
             
-            // Pattern validation
-            if (option.isPattern() && option.getPatternValue() != null && !option.getPatternValue().isEmpty()) {
-                addAnnotationToField(field, "Pattern", 
-                        "regexp", "\"" + option.getPatternValue() + "\"", 
-                        "message", option.isCustomMessage() ? option.getMessage() : option.getPatternMessage());
+            if (option.isPattern()) {
+                String pattern = option.getPattern();
+                if (pattern != null && !pattern.isEmpty()) {
+                    String patternMessage = message != null ? message : "Định dạng không hợp lệ";
+                    addAnnotationToField(field, "Pattern", "regexp", pattern, "message", patternMessage);
+                }
             }
         }
         
-        // Date validations
-        if (fieldType.contains("Date") || fieldType.contains("LocalDate") || 
-            fieldType.contains("LocalDateTime") || fieldType.contains("Calendar")) {
-            // Past validation
-            if (option.isPast()) {
-                addAnnotationToField(field, "Past", "message", 
-                        option.isCustomMessage() ? option.getMessage() : option.getPastMessage());
+        // Validações para datas
+        if (option.isDateValidation()) {
+            if (option.isPastDate()) {
+                String pastMessage = message != null ? message : "Ngày phải là ngày trong quá khứ";
+                addAnnotationToField(field, "Past", "message", pastMessage);
             }
             
-            // Future validation
-            if (option.isFuture()) {
-                addAnnotationToField(field, "Future", "message", 
-                        option.isCustomMessage() ? option.getMessage() : option.getFutureMessage());
-            }
-        }
-        
-        // Collection validations
-        if (fieldType.contains("Collection") || fieldType.contains("List") || 
-            fieldType.contains("Set") || fieldType.contains("Map") || 
-            fieldType.contains("[]")) {
-            
-            // NotEmpty validation
-            if (option.isNotEmpty()) {
-                addAnnotationToField(field, "NotEmpty", "message", 
-                        option.isCustomMessage() ? option.getMessage() : option.getNotEmptyMessage());
-            }
-            
-            // Size validation
-            if (option.isSize()) {
-                addAnnotationToField(field, "Size", 
-                        "min", String.valueOf(option.getMinSize()), 
-                        "max", String.valueOf(option.getMaxSize()), 
-                        "message", option.isCustomMessage() ? option.getMessage() : option.getSizeMessage());
+            if (option.isFutureDate()) {
+                String futureMessage = message != null ? message : "Ngày phải là ngày trong tương lai";
+                addAnnotationToField(field, "Future", "message", futureMessage);
             }
         }
     }

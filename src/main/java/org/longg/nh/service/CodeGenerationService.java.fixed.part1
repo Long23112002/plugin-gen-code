@@ -1,0 +1,30 @@
+package org.longg.nh.service;
+
+import com.intellij.openapi.project.Project;
+import com.intellij.psi.*;
+import com.intellij.psi.codeStyle.JavaCodeStyleManager;
+import com.intellij.ide.highlighter.JavaFileType;
+import org.longg.nh.model.ArchitectureConfig;
+import org.longg.nh.model.ValidationOption;
+import org.longg.nh.util.JavaClassAnalyzer;
+import org.longg.nh.util.JavaClassAnalyzer.ClassField;
+
+import java.util.List;
+import java.util.Set;
+import java.util.Map;
+
+public class CodeGenerationService {
+    private final Project project;
+    private final ArchitectureConfig config;
+    private final PsiClass entityClass;
+    private final List<ClassField> allFields;
+    private final String basePackage;
+    private final String entityName;
+
+    public CodeGenerationService(Project project, ArchitectureConfig config, PsiClass entityClass) {
+        this.project = project;
+        this.config = config;
+        this.entityClass = entityClass;
+        this.allFields = JavaClassAnalyzer.getClassFields(entityClass);
+        this.entityName = entityClass.getName();
+        this.basePackage = ((PsiJavaFile) entityClass.getContainingFile()).getPackageName();

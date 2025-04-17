@@ -17,7 +17,31 @@ public class ArchitectureConfig {
     private String controllerPackage;
     private String filterPackage;
     private boolean useLombok;
-    private Map<String, String> templates;
+    private boolean useDtoValidation;
+    
+    // Custom paths
+    private String customDtoPath;
+    private String customServicePath;
+    private String customRepositoryPath;
+    private String customControllerPath;
+    private String customFilterPath;
+
+    public ArchitectureConfig() {
+        this.name = "Default";
+        this.description = "Default architecture pattern";
+        this.dtoPackage = "dto";
+        this.servicePackage = "service";
+        this.repositoryPackage = "repository";
+        this.controllerPackage = "controller";
+        this.filterPackage = "filter";
+        this.useLombok = true;
+        this.useDtoValidation = false;
+        this.customDtoPath = "";
+        this.customServicePath = "";
+        this.customRepositoryPath = "";
+        this.customControllerPath = "";
+        this.customFilterPath = "";
+    }
 
     public String getName() {
         return name;
@@ -82,12 +106,52 @@ public class ArchitectureConfig {
     public void setUseLombok(boolean useLombok) {
         this.useLombok = useLombok;
     }
-
-    public Map<String, String> getTemplates() {
-        return templates;
+    
+    public boolean isUseDtoValidation() {
+        return useDtoValidation;
     }
-
-    public void setTemplates(Map<String, String> templates) {
-        this.templates = templates;
+    
+    public void setUseDtoValidation(boolean useDtoValidation) {
+        this.useDtoValidation = useDtoValidation;
+    }
+    
+    public String getCustomDtoPath() {
+        return customDtoPath;
+    }
+    
+    public void setCustomDtoPath(String customDtoPath) {
+        this.customDtoPath = customDtoPath;
+    }
+    
+    public String getCustomServicePath() {
+        return customServicePath;
+    }
+    
+    public void setCustomServicePath(String customServicePath) {
+        this.customServicePath = customServicePath;
+    }
+    
+    public String getCustomRepositoryPath() {
+        return customRepositoryPath;
+    }
+    
+    public void setCustomRepositoryPath(String customRepositoryPath) {
+        this.customRepositoryPath = customRepositoryPath;
+    }
+    
+    public String getCustomControllerPath() {
+        return customControllerPath;
+    }
+    
+    public void setCustomControllerPath(String customControllerPath) {
+        this.customControllerPath = customControllerPath;
+    }
+    
+    public String getCustomFilterPath() {
+        return customFilterPath;
+    }
+    
+    public void setCustomFilterPath(String customFilterPath) {
+        this.customFilterPath = customFilterPath;
     }
 } 
